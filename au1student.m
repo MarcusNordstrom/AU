@@ -409,10 +409,15 @@ global docked   % ==0: Satelites NOT docked,  ==1: Satelites docked
 % Position of sat1
 % Xnew = X + V*dt
   XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
+  XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
   if abs(XNEW(1,1) - XNEW(1,2)) < 5
       if abs(VNEW(1,1) - VNEW(1,2)) < 2
           docked = 1
+          VNEW(1,2) = V(1,1) + dt*(F(1,1)/M(1,1))
       else
-          %collision here
+          %V2e = (2m1/m1+m2)*v1f
+          VNEW(1,2)=(2*M(1,1)/(M(1,1)+M(2,2)))*V(1,1)
+          %V1e = (m1-m2/m1+m2)*v1f
+          VNEW(1,1)=((M(1,1)-M(2,2))/(M(1,1)+M(2,2)))*V(1,1)      
       end
   end
