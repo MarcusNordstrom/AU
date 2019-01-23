@@ -399,6 +399,20 @@ global docked   % ==0: Satelites NOT docked,  ==1: Satelites docked
 % as an elastic collision (see for example Eq. 9-12 in Walker).
 % 
 % Delete the two dummy lines below and put new code here
-
-  XNEW = X;
   VNEW = V;
+  XNEW = X;
+% TESTNING
+% Velocity of sat1
+% F=m*a -> a=F/m
+% Vnew = V + dt * a -> Vnew = V + dt * (F/m)
+  VNEW(1,1) = V(1,1) + dt*(F(1,1)/M(1,1))
+% Position of sat1
+% Xnew = X + V*dt
+  XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
+  if abs(XNEW(1,1) - XNEW(1,2)) < 5
+      if abs(VNEW(1,1) - VNEW(1,2)) < 2
+          docked = 1
+      else
+          %collision here
+      end
+  end
