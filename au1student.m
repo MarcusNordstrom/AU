@@ -210,7 +210,7 @@ switch action
         
         txtNumber=3;
         xPos=0.27 +(txtNumber-1)*(txtWid+spacing);
-        labelStr='d=100 m';       % Initial text
+        labelStr='d=10 m';       % Initial text
 
         % Generic button information
         txtPos=[xPos-spacing yPos txtLen txtWid];
@@ -252,7 +252,7 @@ switch action
 
         % ~~~~~~~~~~~ Initial values  for Satelite docking ~~~~~
         X = zeros(3,2);
-        X(1,1) = -100.0;
+        X(1,1) = -10.0;
         X(1,2) = 0.0;
         V = zeros(3,2);
         F = zeros(3,2);
@@ -312,8 +312,13 @@ switch action
 
             % Update the text frames
             set(txt_th_Hndl,'String',['Thrust=' num2str(F(1,1),'% 6.0f') ' N' ]);
-            set(txt_vx_Hndl,'String',['v1x-v2x=' num2str((V(1,1)-V(1,2)),'% 6.2f') ' m/s' ]);
-            set(txt_d_Hndl,'String',['d=' num2str(X(1,2)-X(1,1),'% 6.0f') ' m' ]);
+            if(docked == 0)
+               set(txt_vx_Hndl,'String',['v1x-v2x=' num2str((V(1,1)-V(1,2)),'% 6.2f') ' m/s' ]);
+            end
+            if (docked == 1)
+               set(txt_vx_Hndl,'String',['v1x' num2str((V(1,1)),'% 6.2f') ' m/s' ]);
+            end
+                set(txt_d_Hndl,'String',['d=' num2str(X(1,2)-X(1,1),'% 6.0f') ' m' ]);
 
             if (docked == 1)
                 text(-20,0,5,' Docked');   % Signal succesful docking
@@ -405,19 +410,30 @@ global docked   % ==0: Satelites NOT docked,  ==1: Satelites docked
 % Velocity of sat1
 % F=m*a -> a=F/m
 % Vnew = V + dt * a -> Vnew = V + dt * (F/m)
-  VNEW(1,1) = V(1,1) + dt*(F(1,1)/M(1,1))
-% Position of sat1
-% Xnew = X + V*dt
-  XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
-  XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
+  
   if abs(XNEW(1,1) - XNEW(1,2)) < 5
-      if abs(VNEW(1,1) - VNEW(1,2)) < 2
+      if abs(VNEW(1,1) - VNEW(1,2)) < 2 && docked == 0
           docked = 1
-          VNEW(1,2) = V(1,1) + dt*(F(1,1)/M(1,1))
+          VNEW(1,1) = (M(1,1)/(M(1,1)+M(2,2)))* V(1,1)
+          VNEW(1,2) = V(1,1)
+      elseif(docked == 1)
+           VNEW(1,1) = V(1,1) + dt*(F(1,1)/M(1,1))
+           VNEW(1,2) = VNEW(1,1)
+           XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
+           XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
       else
           %V2e = (2m1/m1+m2)*v1f
           VNEW(1,2)=(2*M(1,1)/(M(1,1)+M(2,2)))*V(1,1)
           %V1e = (m1-m2/m1+m2)*v1f
           VNEW(1,1)=((M(1,1)-M(2,2))/(M(1,1)+M(2,2)))*V(1,1)      
+          
+          XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
+          XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
       end
+  else 
+      VNEW(1,1) = V(1,1) + dt*(F(1,1)/M(1,1))
+      % Position of sat1
+      % Xnew = X + V*dt
+      XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
+      XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
   end
