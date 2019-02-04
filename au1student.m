@@ -210,7 +210,7 @@ switch action
         
         txtNumber=3;
         xPos=0.27 +(txtNumber-1)*(txtWid+spacing);
-        labelStr='d=10 m';       % Initial text
+        labelStr='d=100 m';       % Initial text
 
         % Generic button information
         txtPos=[xPos-spacing yPos txtLen txtWid];
@@ -252,7 +252,7 @@ switch action
 
         % ~~~~~~~~~~~ Initial values  for Satelite docking ~~~~~
         X = zeros(3,2);
-        X(1,1) = -10.0;
+        X(1,1) = -100.0;
         X(1,2) = 0.0;
         V = zeros(3,2);
         F = zeros(3,2);
@@ -402,37 +402,40 @@ global docked   % ==0: Satelites NOT docked,  ==1: Satelites docked
 % between the satelites (see for example Eq. 9-10 in Walker), 
 % if they bounce off (do not dock) the preocess should be treated 
 % as an elastic collision (see for example Eq. 9-12 in Walker).
-% 
-% Delete the two dummy lines below and put new code here
   VNEW = V;
   XNEW = X;
-% TESTNING
-% Velocity of sat1
-% F=m*a -> a=F/m
-% Vnew = V + dt * a -> Vnew = V + dt * (F/m)
-  
-  if abs(XNEW(1,1) - XNEW(1,2)) < 5
-      if abs(VNEW(1,1) - VNEW(1,2)) < 2 && docked == 0
+
+
+  %If positions within 5m
+  if abs(X(1,1) - X(1,2)) < 5
+      %If relative velocity is below 2m/s and they are not docked
+      if abs(V(1,1) - V(1,2)) < 2 && docked == 0
+          %They dock
           docked = 1
+          %Inelastic collision
           VNEW(1,1) = (M(1,1)/(M(1,1)+M(2,2)))* V(1,1)
           VNEW(1,2) = V(1,1)
+      %If already docked
       elseif(docked == 1)
+          %Calculate common velocity and position of docked satelites
            VNEW(1,1) = V(1,1) + dt*(F(1,1)/M(1,1))
            VNEW(1,2) = VNEW(1,1)
            XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
            XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
+      %Elastic collision
       else
-          %V2e = (2m1/m1+m2)*v1f
+          %Calculate collision velocity and position 
           VNEW(1,2)=(2*M(1,1)/(M(1,1)+M(2,2)))*V(1,1)
-          %V1e = (m1-m2/m1+m2)*v1f
           VNEW(1,1)=((M(1,1)-M(2,2))/(M(1,1)+M(2,2)))*V(1,1)      
-          
           XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
           XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
       end
   else 
+      % Velocity of satelite 1
+      % F=m*a -> a=F/m
+      % Vnew = V + dt * a -> Vnew = V + dt * (F/m)
       VNEW(1,1) = V(1,1) + dt*(F(1,1)/M(1,1))
-      % Position of sat1
+      % Position of satelites
       % Xnew = X + V*dt
       XNEW(1,1) = X(1,1) + VNEW(1,1)*dt
       XNEW(1,2) = X(1,2) + VNEW(1,2)*dt
