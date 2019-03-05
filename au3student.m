@@ -32,11 +32,7 @@ function panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, 
     deltaAzimut = panelAzimutAngle - azimutAngle;
     deltaElevation = panelElevationAngle - elevationAngle;
     if (-90<=deltaAzimut) && (deltaAzimut <=90) && (-90<=deltaElevation) && (deltaElevation <=90)
-       %if (deltaAzimut == 0) || (deltaElevation == 0)
-       %    panelPower = surfacePower;
-       %else
-           panelPower = surfacePower*cosd(deltaAzimut)*cosd(deltaElevation);
-       %end
+        panelPower = surfacePower*cosd(deltaAzimut)*cosd(deltaElevation);
     else
         panelPower = 0;
     end
@@ -56,13 +52,9 @@ function azimutAngle = calcAzimutAngle(lattitude, elevationAngle, hourAngle, dec
     if hourAngle < 0
        %ekv 4
        azimutAngle = 180-acosd((((sind(lattitude)*sind(elevationAngle)))-sind(declinationAngle))/(cosd(lattitude)*cosd(elevationAngle)));
-    %elseif hourAngle > 0
     else
         %ekv 5
        azimutAngle = 180+acosd((((sind(lattitude)*sind(elevationAngle)))-sind(declinationAngle))/(cosd(lattitude)*cosd(elevationAngle)));
-%     else
-        %0
-%        azimutAngle = 0; 
      end
 end
 
