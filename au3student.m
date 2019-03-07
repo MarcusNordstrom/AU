@@ -131,6 +131,12 @@ function timeOfDay = calcTimeOfDay(hour, minute)
     timeOfDay = hour + (minute/60);
 end
 
+function sunHourFactor = calcSunHourFactor(month)   %MAYBE WRONG
+    goteborgSunHour = [40, 71, 126, 182, 241, 266, 243, 220, 143, 94, 58, 38];
+    daysInMonths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    sunHourFactor = goteborgSunHour(month)/(daysInMonths(month)*12);
+end
+
 function dayOfYear = calcDayOfYear(month, day)
    dayOfYear = 0;
    daysInMonths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
