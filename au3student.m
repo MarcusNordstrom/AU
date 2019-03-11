@@ -1,31 +1,45 @@
-goteborgLat = 57.70723;
+goteborgLat = 57.71; %57.70723
 azimut = 150;
 elevation = 25;
 efficiency = 0.15;
 area = 30;
-%write current task here
-%Add in sunHours to all formulas
-%Calculate Wh with integral of graphs
-%figure(1);
-%plotDay(3, 30, goteborgLat, elevation, azimut, efficiency, area)
-%hold on
-%yp = calcYearlyPower(goteborgLat, elevation, azimut, efficiency, area)
+
+% figure(1);
+% subplot(1, 2, 1)
+% plotDay(1, 15, goteborgLat, elevation, azimut, efficiency, area)
+% axis([4 16 0 3000])
+% subplot(1,2,2)
+% plotDay(6, 15, goteborgLat, elevation, azimut, efficiency, area)
+% axis([4 16 0 3000])
+%EXAMPLE PLOT FROM Au3 doc
+%plotDay(5 ,1 , 55.6, 20, 180, 0.15, 30);
+%yp = calcYearlyPower(goteborgLat, elevation, azimut, efficiency, area)/1000
 %figure(2);
-plotYear(goteborgLat, elevation, azimut, efficiency, area)
-optimalElevationAngle = optimizeElevation(goteborgLat, azimut, efficiency, area)
-area = oneGWarea(goteborgLat, elevation, azimut, efficiency)
+%plotYear(goteborgLat, elevation, azimut, efficiency, area)
+%janPower = calcMonthlyPower(1, goteborgLat, elevation, azimut, efficiency, area)/1000
+%junPower = calcMonthlyPower(6, goteborgLat, elevation, azimut, efficiency, area)/1000
+%optimalElevationAngle = optimizeElevation(goteborgLat, azimut, efficiency, area)
+area = oneGWarea(3, 8 , 11, goteborgLat, elevation, azimut, efficiency)
+%calcDailyMax(3, 8 , 11, goteborgLat, elevation, azimut, efficiency, 30);
+%calcDailyMax(5, 1 , 14.5, 55.6, 20, 180, 0.15, 30);
 %%
 
 %optimize functions
-function optimized = optimizeElevation(lattitude, panelAzimutAngle, efficiency, area)
+function optimizedAngle = optimizeElevation(lattitude, panelAzimutAngle, efficiency, area)
     fun = @(x)-1*(calcYearlyPower(lattitude, x, panelAzimutAngle, efficiency, area));
-    optimized = fminbnd(fun, 0, 90);
+    optimizedAngle = fminbnd(fun, 0, 90);
+    yearlyPower = calcYearlyPower(lattitude, optimizedAngle, panelAzimutAngle, efficiency, area)/1000
 end
 
-%THIS IS WRONG
-function areaValue = oneGWarea(lattitude, panelElevationAngle, panelAzimutAngle, efficiency)
-    fun = @(x)abs(calcYearlyPower(lattitude, panelElevationAngle, panelAzimutAngle, efficiency, x)-1e9);
-    areaValue = fminbnd(fun, 0, 1e12);
+function areaValue = oneGWarea(month, day, time, lattitude, panelElevationAngle, panelAzimutAngle, efficiency)
+    dayOfYear = calcDayOfYear(month, day);
+    declinationAngle = calcDeclinationAngle(dayOfYear);
+    hourAngle = calcHourAngle(time);
+    elevationAngle = calcElevationAngle(lattitude, hourAngle, declinationAngle);
+    azimutAngle = calcAzimutAngle(lattitude, elevationAngle, hourAngle, declinationAngle);
+    surfacePower = calcSurfacePower(elevationAngle);
+    panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, panelElevationAngle, panelAzimutAngle);
+    areaValue = 1e9/(efficiency*panelPower);
 end
 
 %plot functions
@@ -68,14 +82,48 @@ function plotDay(month, day, lattitude, panelElevationAngle, panelAzimutAngle, e
         azimutAngle = calcAzimutAngle(lattitude, elevationAngle, hourAngle, declinationAngle);
         surfacePower = calcSurfacePower(elevationAngle);
         panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, panelElevationAngle, panelAzimutAngle);
-        power(i) = calcTotalPower(day,efficiency, panelPower, area);
+        power(i) = calcTotalPower(dayOfYear,efficiency, panelPower, area);
     end
     scatter(t, abs(power));
+    axis([5 19 0 4000]);
     title([num2str(day),'/',num2str(month)])
     ylabel("P [W]");
     xlabel("tid [h]");
 end
 %calculate functions
+function maxPower = calcDailyMax(month, day, time, lattitude, panelElevationAngle, panelAzimutAngle, efficiency, area)
+    dayOfYear = calcDayOfYear(month, day);
+    declinationAngle = calcDeclinationAngle(dayOfYear);
+    hourAngle = calcHourAngle(time);
+    elevationAngle = calcElevationAngle(lattitude, hourAngle, declinationAngle);
+    azimutAngle = calcAzimutAngle(lattitude, elevationAngle, hourAngle, declinationAngle);
+    surfacePower = calcSurfacePower(elevationAngle);
+    panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, panelElevationAngle, panelAzimutAngle);
+    maxPower = calcTotalPower(dayOfYear,efficiency, panelPower, area);
+end
+
+function integralPower = calcMonthlyPower(month, lattitude, panelElevationAngle, panelAzimutAngle, efficiency, area)
+    integralPower = 0;
+    daysInMonths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    for dayOfYear = calcDayOfYear(month, 1):(daysInMonths(month)+calcDayOfYear(month, 1))
+        declinationAngle = calcDeclinationAngle(dayOfYear);
+        t = 1:0.25:23;
+        power = zeros(1, length(t));
+        for i = 1:length(t)
+            currentTime = t(i);
+            hourAngle = calcHourAngle(currentTime);
+            elevationAngle = calcElevationAngle(lattitude, hourAngle, declinationAngle);
+            azimutAngle = calcAzimutAngle(lattitude, elevationAngle, hourAngle, declinationAngle);
+            surfacePower = calcSurfacePower(elevationAngle);
+            panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, panelElevationAngle, panelAzimutAngle);
+            currentPower = calcTotalPower(dayOfYear, efficiency, panelPower, area);
+            %power = power + real(currentPower);
+            power(i) = real(currentPower);
+        end
+        integralPower = integralPower + trapz(power);
+    end
+end
+
 function integralPower = calcYearlyPower(lattitude, panelElevationAngle, panelAzimutAngle, efficiency, area)
     integralPower = 0;
     for dayOfYear = 1:365
@@ -98,8 +146,8 @@ function integralPower = calcYearlyPower(lattitude, panelElevationAngle, panelAz
 end
 
 function totalPower = calcTotalPower(day, efficiency, panelPower, area)
-    %sunHourFactor = calcSunHourFactor(day);
-    sunHourFactor = 1;
+    sunHourFactor = calcSunHourFactor(day);
+    %sunHourFactor = 1;
     totalPower = efficiency*panelPower*area*sunHourFactor;
 end
 
@@ -142,7 +190,8 @@ function hourAngle = calcHourAngle(time)
 end
 
 function declinationAngle = calcDeclinationAngle(dayOfYear)
-    declinationAngle = -23.44*cosd(((360/365)*dayOfYear));
+    %declinationAngle = -23.44*cosd(((360/365)*dayOfYear));
+    declinationAngle = -23.44*cosd((360*dayOfYear)/365);
 end
 
 function timeOfDay = calcTimeOfDay(hour, minute)
