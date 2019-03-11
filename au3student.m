@@ -3,32 +3,39 @@ azimut = 150;
 elevation = 25;
 efficiency = 0.15;
 area = 30;
-
-% figure(1);
-% subplot(1, 2, 1)
-% plotDay(1, 15, goteborgLat, elevation, azimut, efficiency, area)
-% axis([4 16 0 3000])
-% subplot(1,2,2)
-% plotDay(6, 15, goteborgLat, elevation, azimut, efficiency, area)
-% axis([4 16 0 3000])
 %EXAMPLE PLOT FROM Au3 doc
 %plotDay(5 ,1 , 55.6, 20, 180, 0.15, 30);
-%yp = calcYearlyPower(goteborgLat, elevation, azimut, efficiency, area)/1000
-%figure(2);
-%plotYear(goteborgLat, elevation, azimut, efficiency, area)
-%janPower = calcMonthlyPower(1, goteborgLat, elevation, azimut, efficiency, area)/1000
-%junPower = calcMonthlyPower(6, goteborgLat, elevation, azimut, efficiency, area)/1000
-%optimalElevationAngle = optimizeElevation(goteborgLat, azimut, efficiency, area)
+
+figure(1);
+subplot(1, 2, 1)
+plotDay(1, 15, goteborgLat, elevation, azimut, efficiency, area)
+axis([4 16 0 3000])
+subplot(1,2,2)
+plotDay(6, 15, goteborgLat, elevation, azimut, efficiency, area)
+axis([4 16 0 3000])
+figure(2);
+plotYear(goteborgLat, elevation, azimut, efficiency, area)
+figure(3);
+subplot(1, 2,1)
+plotMonth(1, goteborgLat, elevation, azimut, efficiency, area)
+title("Januari");
+axis([1 31 0 80]);
+subplot(1,2,2)
+plotMonth(6, goteborgLat, elevation, azimut, efficiency, area)
+title("Juni");
+axis([1 30 0 80]);
+yearlyPower = calcYearlyPower(goteborgLat, elevation, azimut, efficiency, area)/1000
+janPower = calcMonthlyPower(1, goteborgLat, elevation, azimut, efficiency, area)/1000
+junPower = calcMonthlyPower(6, goteborgLat, elevation, azimut, efficiency, area)/1000
+optimalElevationAngle = optimizeElevation(goteborgLat, azimut, efficiency, area)
 area = oneGWarea(3, 8 , 11, goteborgLat, elevation, azimut, efficiency)
-%calcDailyMax(3, 8 , 11, goteborgLat, elevation, azimut, efficiency, 30);
-%calcDailyMax(5, 1 , 14.5, 55.6, 20, 180, 0.15, 30);
 %%
 
 %optimize functions
 function optimizedAngle = optimizeElevation(lattitude, panelAzimutAngle, efficiency, area)
     fun = @(x)-1*(calcYearlyPower(lattitude, x, panelAzimutAngle, efficiency, area));
     optimizedAngle = fminbnd(fun, 0, 90);
-    yearlyPower = calcYearlyPower(lattitude, optimizedAngle, panelAzimutAngle, efficiency, area)/1000
+    optimizedPower = calcYearlyPower(lattitude, optimizedAngle, panelAzimutAngle, efficiency, area)/1000
 end
 
 function areaValue = oneGWarea(month, day, time, lattitude, panelElevationAngle, panelAzimutAngle, efficiency)
@@ -43,6 +50,35 @@ function areaValue = oneGWarea(month, day, time, lattitude, panelElevationAngle,
 end
 
 %plot functions
+function plotMonth(month, lattitude, panelElevationAngle, panelAzimutAngle, efficiency, area)
+    daysInMonths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    power = zeros(1, daysInMonths(month));
+    days = 1:1:daysInMonths(month);
+    for d = 1:daysInMonths(month)
+        dayOfYear = calcDayOfYear(month, d);
+        declinationAngle = calcDeclinationAngle(dayOfYear);
+        t = 1:0.25:23;
+        dayPower = zeros(1, length(t));
+        for i = 1:length(t)
+            currentTime = t(i);
+            hourAngle = calcHourAngle(currentTime);
+            elevationAngle = calcElevationAngle(lattitude, hourAngle, declinationAngle);
+            azimutAngle = calcAzimutAngle(lattitude, elevationAngle, hourAngle, declinationAngle);
+            surfacePower = calcSurfacePower(elevationAngle);
+            panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, panelElevationAngle, panelAzimutAngle);
+            currentPower = calcTotalPower(dayOfYear, efficiency, panelPower, area);
+            dayPower(i) = real(currentPower);
+            %power(dayOfYear) = power(dayOfYear) + currentPower;
+        end
+        power(d) = (trapz(dayPower))/1000;
+    end
+    length(days)
+    length(power)
+    scatter(days, power);
+    ylabel("P [KWh]");
+    xlabel("tid [dagar]");
+end
+
 function plotYear(lattitude, panelElevationAngle, panelAzimutAngle, efficiency, area)
     power = zeros(1, 365);
     days = 1:1:365;
