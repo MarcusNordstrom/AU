@@ -24,11 +24,11 @@ subplot(1,2,2)
 plotMonth(6, goteborgLat, elevation, azimut, efficiency, area)
 title("Juni");
 axis([1 30 0 80]);
-yearlyPower = calcYearlyPower(goteborgLat, elevation, azimut, efficiency, area)/1000
-janPower = calcMonthlyPower(1, goteborgLat, elevation, azimut, efficiency, area)/1000
-junPower = calcMonthlyPower(6, goteborgLat, elevation, azimut, efficiency, area)/1000
-optimalElevationAngle = optimizeElevation(goteborgLat, azimut, efficiency, area)
-area = oneGWarea(3, 8 , 11, goteborgLat, elevation, azimut, efficiency)
+% yearlyPower = calcYearlyPower(goteborgLat, elevation, azimut, efficiency, area)/1000
+% janPower = calcMonthlyPower(1, goteborgLat, elevation, azimut, efficiency, area)/1000
+% junPower = calcMonthlyPower(6, goteborgLat, elevation, azimut, efficiency, area)/1000
+% optimalElevationAngle = optimizeElevation(goteborgLat, azimut, efficiency, area)
+% area = oneGWarea(3, 8 , 11, goteborgLat, elevation, azimut, efficiency)
 %%
 
 %optimize functions
@@ -72,9 +72,17 @@ function plotMonth(month, lattitude, panelElevationAngle, panelAzimutAngle, effi
         end
         power(d) = (trapz(dayPower))/1000;
     end
-    length(days)
-    length(power)
     scatter(days, power);
+    hold on
+    s.X = [days(1:end-1);days(1:end-1);days(2:end);days(2:end)];
+    len = length(power)-1;
+    s.Y = [zeros(1, len);power(1:end-1);power(2:end);zeros(1, len)];
+    s.FaceColor = 'red';
+    s.EdgeColor = 'none';
+    s.FaceAlpha = 0.5;
+    patch(s);
+    hold off
+    legend("Power", [num2str(trapz(power)/1000),' kWh']);
     ylabel("P [KWh]");
     xlabel("tid [dagar]");
 end
@@ -100,6 +108,16 @@ function plotYear(lattitude, panelElevationAngle, panelAzimutAngle, efficiency, 
         power(dayOfYear) = (trapz(dayPower))/1000;
     end
     scatter(days, power);
+    hold on
+    s.X = [days(1:end-1);days(1:end-1);days(2:end);days(2:end)];
+    len = length(power)-1;
+    s.Y = [zeros(1, len);power(1:end-1);power(2:end);zeros(1, len)];
+    s.FaceColor = 'red';
+    s.EdgeColor = 'none';
+    s.FaceAlpha = 0.5;
+    patch(s);
+    hold off
+    legend("Power", [num2str(trapz(power)/1000),' kWh']);
     axis([1 365 0 110]);
     title("År");
     ylabel("P [KWh]");
@@ -120,7 +138,17 @@ function plotDay(month, day, lattitude, panelElevationAngle, panelAzimutAngle, e
         panelPower = calcPanelPower(surfacePower, elevationAngle, azimutAngle, panelElevationAngle, panelAzimutAngle);
         power(i) = calcTotalPower(dayOfYear,efficiency, panelPower, area);
     end
-    scatter(t, abs(power));
+    scatter(t, power);
+    hold on
+    s.X = [t(1:end-1);t(1:end-1);t(2:end);t(2:end)];
+    len = length(power)-1;
+    s.Y = [zeros(1, len);power(1:end-1);power(2:end);zeros(1, len)];
+    s.FaceColor = 'red';
+    s.EdgeColor = 'none';
+    s.FaceAlpha = 0.5;
+    patch(s);
+    hold off
+    legend("Power", [num2str(trapz(power)/1000),' kWh']);
     axis([5 19 0 4000]);
     title([num2str(day),'/',num2str(month)])
     ylabel("P [W]");
@@ -263,13 +291,4 @@ function dayOfYear = calcDayOfYear(month, day)
       dayOfYear = dayOfYear + daysInMonths(i);
    end
    dayOfYear = dayOfYear + day;
-end
-
-%Common functions
-function y = deg2rad(x)
-    y = x.*pi./180;
-end
-
-function y = rad2deg(x)
-    y = (x.*180)./pi;
 end
